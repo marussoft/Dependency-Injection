@@ -10,14 +10,14 @@ class Container
     
     private $dependencies;
     
-    private $instance;
+    private $definations;
     
     private $params;
     
     public function get($class_name)
     {
-        if (isset($this->instance[$class_name])) {
-            return $this->instance[$class_name];
+        if (isset($this->definations[$class_name])) {
+            return $this->definations[$class_name];
         }
     }
     
