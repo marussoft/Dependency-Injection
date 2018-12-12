@@ -14,6 +14,8 @@ class Container
     
     private $params;
     
+    private $trees;
+    
     public function get($class_name)
     {
         if (isset($this->definations[$class_name])) {
@@ -21,13 +23,17 @@ class Container
         }
     }
     
-    private function instance($class_name, $params)
+    public function instance($class_name, $params = [])
     {
-        $this->params[$class_name] = $params;
+        $this->params = $params;
         
         $this->buildDependencies($class_name);
         
         $this->instanceRecursive();
+        
+        $this->trees[$class_name] = $this->dependencies;
+        
+        $this->dependencies = [];
         
         return $this->get[$class_name];
     }
@@ -71,13 +77,14 @@ class Container
             $class = key($this->dependencies);
             
             $deps = current($this->dependencies);
+
+            if (prev($this->dependencies) === false) {
+                $this->instanceRequire($class, $deps);
+                break;
+            }
             
             $this->instanceDependencies($class, $deps);
-            
-            prev($this->dependencies);
         }
-        
-        
     }
     
     private function instanceDependencies($class, $deps)
@@ -94,18 +101,27 @@ class Container
                 }
                 
             } else {
-                $dependencies[] = $this->reflections[$dep]->newInstanceWithoutConstructor()
+                $this->definations[$dep] = $this->reflections[$dep]->newInstanceWithoutConstructor()
             }
+            $dependencies[] = $this->definations[$dep];
         }
         
-        $instance = $this->reflections[$class]->newInstanceArgs($dependencies);
+        $this->definations[$class] = $this->reflections[$class]->newInstanceArgs($dependencies);
     }
     
-    private function mergeParams($class_name, $params)
+    private function instanceRequire($class, $deps)
     {
-        if (isset($this->params[$class_name])) {
-            return array_merge($this->params[$class_name], $params);
+        $dependencies = [];
+        
+        foreach ($deps as $dep) {
+            $dependencies[] = $this->definations[$dep];
         }
+        
+        if (!empty($this->params)) {
+            $dependencies = array_merge($this->params, $dependencies);
+        }
+        
+        $this->definations[$class] = $this->reflections[$class]->newInstanceArgs($dependencies);
     }
     
 }
