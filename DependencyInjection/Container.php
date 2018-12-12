@@ -35,13 +35,13 @@ class Container
         
         $this->dependencies = [];
         
-        return $this->get[$class_name];
+        return $this->get($class_name);
     }
     
     private function buildDependencies(string $class_name)
     {
         if (isset($this->reflections[$class_name])) {
-            $reflection = $this->reflections[$class_name]ж
+            $reflection = $this->reflections[$class_name];
         } else {
             $reflection = new \ReflectionClass($class_name);
             $this->reflections[$class_name] = $reflection;
@@ -70,7 +70,7 @@ class Container
     
     private function instanceRecursive()
     {
-        end($this->dependencies);
+        $deps = end($this->dependencies);
         
         while ($deps !== false) {
         
@@ -101,7 +101,7 @@ class Container
                 }
                 
             } else {
-                $this->definations[$dep] = $this->reflections[$dep]->newInstanceWithoutConstructor()
+                $this->definations[$dep] = $this->reflections[$dep]->newInstance();
             }
             $dependencies[] = $this->definations[$dep];
         }
@@ -118,7 +118,7 @@ class Container
         }
         
         if (!empty($this->params)) {
-            $dependencies = array_merge($this->params, $dependencies);
+            $dependencies = array_merge($dependencies, $this->params);
         }
         
         $this->definations[$class] = $this->reflections[$class]->newInstanceArgs($dependencies);
