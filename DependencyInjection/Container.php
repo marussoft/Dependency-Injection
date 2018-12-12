@@ -64,7 +64,41 @@ class Container
     
     private function instanceRecursive()
     {
-        $reflection->newInstanceArgs($dependencies);
+        end($this->dependencies);
+        
+        while ($deps !== false) {
+        
+            $class = key($this->dependencies);
+            
+            $deps = current($this->dependencies);
+            
+            $this->instanceDependencies($class, $deps);
+            
+            prev($this->dependencies);
+        }
+        
+        
+    }
+    
+    private function instanceDependencies($class, $deps)
+    {
+        $dependencies = [];
+    
+        foreach ($deps as $dep) {
+            
+            if (isset($this->dependencies[$dep])) {
+                if (isset($this->definations[$dep])) {
+                    $dependencies[] = $this->definations[$dep];
+                } else {
+                    $this->instanceDependencies($dep, $this->definations[$dep]);
+                }
+                
+            } else {
+                $dependencies[] = $this->reflections[$dep]->newInstanceWithoutConstructor()
+            }
+        }
+        
+        $instance = $this->reflections[$class]->newInstanceArgs($dependencies);
     }
     
     private function mergeParams($class_name, $params)
@@ -73,4 +107,5 @@ class Container
             return array_merge($this->params[$class_name], $params);
         }
     }
+    
 }
