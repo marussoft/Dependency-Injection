@@ -8,14 +8,14 @@ class Container
 {
     private $reflections;
     
-    private $dependencies;
+    private $dependencies = [];
     
     private $definations;
     
     private $params;
     
     private $trees;
-    
+
     public function get($class_name)
     {
         if (isset($this->definations[$class_name])) {
@@ -29,12 +29,22 @@ class Container
         
         $this->buildDependencies($class_name);
         
+        if (count($this->dependencies) === 1) {
+            $this->instanceSingle($class_name);
+            return $this->get($class_name);
+        }
+        
+        if (empty($this->dependencies)) {
+            $this->instanceRequire($class_name);
+            return $this->get($class_name);
+        }
+        
         $this->instanceRecursive();
         
         $this->trees[$class_name] = $this->dependencies;
         
         $this->dependencies = [];
-        
+
         return $this->get($class_name);
     }
     
@@ -109,7 +119,18 @@ class Container
         $this->definations[$class] = $this->reflections[$class]->newInstanceArgs($dependencies);
     }
     
-    private function instanceRequire($class, $deps)
+    private function instanceSingle($class)
+    {
+        foreach ($this->dependencies[$class] as $dep) {
+            
+            if (!isset($this->definations[$dep])) {
+                $this->definations[$dep] = $this->reflections[$dep]->newInstance();
+            }
+        }
+        $this->instanceRequire($class, $this->dependencies[$class]);
+    }
+    
+    private function instanceRequire($class, $deps = [])
     {
         $dependencies = [];
         
