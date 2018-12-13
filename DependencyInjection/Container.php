@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Marussia\Components\DependencyInjection;
 
-class Container
+class Container implements ContainerInterface
 {
     private $reflections;
     
@@ -15,6 +15,8 @@ class Container
     private $params;
     
     private $trees;
+    
+    private $singleton;
 
     public function get($class_name)
     {
@@ -23,8 +25,15 @@ class Container
         }
     }
     
-    public function instance($class_name, $params = [])
+    public function has($class_name)
     {
+        return isset($this->definations[$class_name]);
+    }
+    
+    public function instance(string $class_name, array $params = [], bool $singleton = true)
+    {
+        $this->singleton = $singleton;
+    
         $this->params = $params;
         
         $this->buildDependencies($class_name);
@@ -145,4 +154,28 @@ class Container
         $this->definations[$class] = $this->reflections[$class]->newInstanceArgs($dependencies);
     }
     
+    private function setDefination($class_name, $defination)
+    {
+        if ($this->singleton) {
+            $this->definations[$class_name] = $defination;
+        } else {
+            $this->tmp[$class_name] = $defination;
+        }
+    }
+    
+    private function getDefination($class_name)
+    {
+        if ($this->singleton) {
+            return $this->definations[$class_name];
+        }
+        return $this->tmp[$class_name];
+    }
+    
+    private hasDefination($class_name)
+    {
+        if ($this->singleton) {
+            return isset($this->definations[$class_name]);
+        }
+        return return isset($this->tmp[$class_name]);
+    }
 }
