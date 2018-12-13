@@ -25,13 +25,17 @@ class Container implements ContainerInterface
         }
     }
     
-    public function has($class_name)
+    public function has(string $class_name)
     {
         return isset($this->definations[$class_name]);
     }
     
     public function instance(string $class_name, array $params = [], bool $singleton = true)
     {
+        $this->tmp = [];
+        
+        $this->dependencies = [];
+    
         $this->singleton = $singleton;
     
         $this->params = $params;
@@ -40,21 +44,19 @@ class Container implements ContainerInterface
         
         if (count($this->dependencies) === 1) {
             $this->instanceSingle($class_name);
-            return $this->get($class_name);
+            return $this->getDefination($class_name);
         }
         
         if (empty($this->dependencies)) {
             $this->instanceRequire($class_name);
-            return $this->get($class_name);
+            return $this->getDefination($class_name);
         }
         
         $this->instanceRecursive();
         
         $this->trees[$class_name] = $this->dependencies;
-        
-        $this->dependencies = [];
 
-        return $this->get($class_name);
+        return $this->getDefination($class_name);
     }
     
     private function buildDependencies(string $class_name)
@@ -113,27 +115,27 @@ class Container implements ContainerInterface
         foreach ($deps as $dep) {
             
             if (isset($this->dependencies[$dep])) {
-                if (isset($this->definations[$dep])) {
-                    $dependencies[] = $this->definations[$dep];
+                if ($this->hasDefination($dep)) {
+                    $dependencies[] = $this->getDefination($dep);
                 } else {
-                    $this->instanceDependencies($dep, $this->definations[$dep]);
+                    $this->instanceDependencies($dep, $this->getDefination($dep));
                 }
                 
             } else {
-                $this->definations[$dep] = $this->reflections[$dep]->newInstance();
+                $this->setDefination($dep, $this->reflections[$dep]->newInstance());
             }
-            $dependencies[] = $this->definations[$dep];
+            $dependencies[] = $this->getDefination($dep);
         }
         
-        $this->definations[$class] = $this->reflections[$class]->newInstanceArgs($dependencies);
+        $this->setDefination($class, $this->reflections[$class]->newInstanceArgs($dependencies));
     }
     
     private function instanceSingle($class)
     {
         foreach ($this->dependencies[$class] as $dep) {
             
-            if (!isset($this->definations[$dep])) {
-                $this->definations[$dep] = $this->reflections[$dep]->newInstance();
+            if (!$this->hasDefination($dep)) {
+                $this->setDefination($dep, $this->reflections[$dep]->newInstance());
             }
         }
         $this->instanceRequire($class, $this->dependencies[$class]);
@@ -144,14 +146,13 @@ class Container implements ContainerInterface
         $dependencies = [];
         
         foreach ($deps as $dep) {
-            $dependencies[] = $this->definations[$dep];
+            $dependencies[] = $this->getDefination($dep);
         }
         
         if (!empty($this->params)) {
             $dependencies = array_merge($dependencies, $this->params);
         }
-        
-        $this->definations[$class] = $this->reflections[$class]->newInstanceArgs($dependencies);
+        $this->setDefination($class, $this->reflections[$class]->newInstanceArgs($dependencies));
     }
     
     private function setDefination($class_name, $defination)
