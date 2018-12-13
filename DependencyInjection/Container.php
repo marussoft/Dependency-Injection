@@ -171,11 +171,11 @@ class Container implements ContainerInterface
         return $this->tmp[$class_name];
     }
     
-    private hasDefination($class_name)
+    private function hasDefination($class_name)
     {
         if ($this->singleton) {
             return isset($this->definations[$class_name]);
         }
-        return return isset($this->tmp[$class_name]);
+        return isset($this->tmp[$class_name]);
     }
 }
