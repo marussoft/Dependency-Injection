@@ -24,7 +24,7 @@ class Container implements ContainerInterface
     public function get($class_name)
     {
         if (!isset($this->definations[$class_name])) {
-            throw new NotFoundException('Объект класса ' . $class_name . ' не зарегистрирован.');
+            throw new NotFoundException($class_name);
         }
         return $this->definations[$class_name];
     }
@@ -63,7 +63,7 @@ class Container implements ContainerInterface
         return $this->getDefination($class_name);
     }
     
-    private function prepareDependencies(string $class_name)
+    private function prepareDependencies(string $class_name) : void
     {
         if (isset($this->trees[$class_name])) {
             $this->dependencies[$class_name] = $this->trees[$class_name];
@@ -82,7 +82,7 @@ class Container implements ContainerInterface
         }
     }
     
-    private function buildDependencies($constructor, $class_name)
+    private function buildDependencies(\ReflectionMethod $constructor, string $class_name) : void
     {
         // Проходим по параметрам конструктора
         foreach ($constructor->getParameters() as $param) {
@@ -97,7 +97,7 @@ class Container implements ContainerInterface
                 
                 // Если класс зависит от запрошенного то это циклическая зависимость
                 if (isset($this->dependencies[$dep_class_name])) {
-                    throw new EndlessException('Класс ' . $class_name . ' имеет циклическую зависимость от класса ' . $dep_class_name);
+                    throw new EndlessException($class_name, $dep_class_name);
                 }
                 
                 $this->dependencies[$class_name][] = $dep_class_name;
@@ -106,7 +106,7 @@ class Container implements ContainerInterface
         }
     }
     
-    private function iterateDependensies()
+    private function iterateDependensies() : void
     {
         $deps = end($this->dependencies);
         
@@ -125,7 +125,7 @@ class Container implements ContainerInterface
         }
     }
     
-    private function instanceRecursive($class, $deps)
+    private function instanceRecursive(string $class, array $deps) : void
     {
         $dependencies = [];
     
@@ -149,7 +149,7 @@ class Container implements ContainerInterface
         $this->setDefination($class, $this->reflections[$class]->newInstanceArgs($dependencies));
     }
     
-    private function instanceSingleClass($class)
+    private function instanceSingleClass(string $class) : void
     {
         foreach ($this->dependencies[$class] as $dep) {
             
@@ -160,7 +160,7 @@ class Container implements ContainerInterface
         $this->instanceClass($class, $this->dependencies[$class]);
     }
     
-    private function instanceClass($class, $deps = [])
+    private function instanceClass(string $class, array $deps = []) : void
     {
         $dependencies = [];
         
@@ -174,7 +174,7 @@ class Container implements ContainerInterface
         $this->setDefination($class, $this->reflections[$class]->newInstanceArgs($dependencies));
     }
     
-    private function setDefination($class_name, $defination)
+    private function setDefination(string $class_name, $defination) : void
     {
         if ($this->singleton) {
             $this->definations[$class_name] = $defination;
@@ -183,7 +183,7 @@ class Container implements ContainerInterface
         }
     }
     
-    private function getDefination($class_name)
+    private function getDefination(string $class_name)
     {
         if ($this->singleton) {
             return $this->definations[$class_name];
@@ -191,7 +191,7 @@ class Container implements ContainerInterface
         return $this->tmp[$class_name];
     }
     
-    private function hasDefination($class_name)
+    private function hasDefination(string $class_name) : bool
     {
         if ($this->singleton) {
             return isset($this->definations[$class_name]);
