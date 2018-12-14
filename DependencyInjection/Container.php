@@ -21,7 +21,7 @@ class Container implements ContainerInterface
     
     private $singleton;
 
-    public function get($class_name)
+    public function get(string $class_name)
     {
         if (!isset($this->definations[$class_name])) {
             throw new NotFoundException($class_name);
