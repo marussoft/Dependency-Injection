@@ -29,7 +29,7 @@ class Container implements ContainerInterface
         return $this->definations[$class_name];
     }
     
-    public function has(string $class_name)
+    public function has(string $class_name) : bool
     {
         return isset($this->definations[$class_name]);
     }
