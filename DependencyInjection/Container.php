@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Marussia\Components\DependencyInjection;
 
+use Marussia\Components\DependencyInjection\Exception\EndlessException;
+use Marussia\Components\DependencyInjection\Exception\NotFoundException;
+
 class Container implements ContainerInterface
 {
     private $reflections;
@@ -20,9 +23,10 @@ class Container implements ContainerInterface
 
     public function get($class_name)
     {
-        if (isset($this->definations[$class_name])) {
-            return $this->definations[$class_name];
+        if (!isset($this->definations[$class_name])) {
+            throw new NotFoundException('Объект класса ' . $class_name . ' не зарегистрирован.');
         }
+        return $this->definations[$class_name];
     }
     
     public function has(string $class_name)
@@ -93,9 +97,7 @@ class Container implements ContainerInterface
                 
                 // Если класс зависит от запрошенного то это циклическая зависимость
                 if (isset($this->dependencies[$dep_class_name])) {
-                    // Здесь будет исключение
-                    echo 'Циклическая зависимость';
-                    exit();
+                    throw new EndlessException('Класс ' . $class_name . ' имеет циклическую зависимость от класса ' . $dep_class_name);
                 }
                 
                 $this->dependencies[$class_name][] = $dep_class_name;
