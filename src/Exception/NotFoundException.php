@@ -1,6 +1,6 @@
 <?php
 
-namespace Marussia\Components\DependencyInjection\Exception;
+namespace Marussia\DependencyInjection\Exception;
 
 class NotFoundException extends \Exception
 {
