@@ -1,6 +1,6 @@
 <?php
 
-namespace Marussia\Components\DependencyInjection;
+namespace Marussia\DependencyInjection;
 
 
 interface ContainerInterface

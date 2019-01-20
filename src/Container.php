@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Marussia\Components\DependencyInjection;
+namespace Marussia\DependencyInjection;
 
-use Marussia\Components\DependencyInjection\Exception\EndlessException;
-use Marussia\Components\DependencyInjection\Exception\NotFoundException;
+use Marussia\DependencyInjection\Exception\EndlessException;
+use Marussia\DependencyInjection\Exception\NotFoundException;
 
 class Container implements ContainerInterface
 {
@@ -125,6 +125,7 @@ class Container implements ContainerInterface
         }
     }
     
+    // Рекурсивно проходит по зависимостям
     private function instanceRecursive(string $class, array $deps) : void
     {
         $dependencies = [];

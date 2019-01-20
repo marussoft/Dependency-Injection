@@ -1,0 +1,23 @@
+{
+    "name": "marussia/dependency-injection",
+    "type": "library",
+    "description": "Recursive dependency injection container",
+    "license": "MIT",
+    "keywords": [
+        "dependency-injection"
+    ],
+    "authors": [
+        {
+            "name": "Mikhail Ilinsky",
+            "email": "mail@milinsky.ru"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Marussia\\DependencyInjection\\": "src/"
+        }
+    }
+} 
