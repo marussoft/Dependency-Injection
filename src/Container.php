@@ -82,6 +82,7 @@ class Container implements ContainerInterface
         }
     }
     
+    // Рекурсивно выстраивает зависимости
     private function buildDependencies(\ReflectionMethod $constructor, string $class_name) : void
     {
         // Проходим по параметрам конструктора
