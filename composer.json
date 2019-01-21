@@ -12,6 +12,9 @@
             "email": "mail@milinsky.ru"
         }
     ],
+    "support": {
+        "docs": "https://docs.marussia.org/di/"
+    },
     "require": {
         "php": ">=7.0.0"
     },
