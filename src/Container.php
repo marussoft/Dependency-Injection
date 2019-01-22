@@ -9,16 +9,22 @@ use Marussia\DependencyInjection\Exception\NotFoundException;
 
 class Container implements ContainerInterface
 {
+    // Массив рефлексий
     private $reflections;
     
+    // Массив дерева зависимостей
     private $dependencies = [];
     
+    // Массив объектов
     private $definations;
     
+    // Массив параметров
     private $params;
     
+    // Сохраненные деревья зависимостей
     private $trees = [];
     
+    // Флаг синглтона
     private $singleton;
 
     public function get(string $class_name)
@@ -34,6 +40,7 @@ class Container implements ContainerInterface
         return isset($this->definations[$class_name]);
     }
     
+    // Создает инстанс переданного класса
     public function instance(string $class_name, array $params = [], bool $singleton = true)
     {
         $this->tmp = [];
@@ -63,13 +70,16 @@ class Container implements ContainerInterface
         return $this->getDefination($class_name);
     }
     
+    // Подготавливает зависимости к рекурсивному инстанцированию 
     private function prepareDependencies(string $class_name) : void
     {
+        // Проверяем наличие ранее созданного дерева зависимостей для класса
         if (isset($this->trees[$class_name])) {
             $this->dependencies[$class_name] = $this->trees[$class_name];
             return;
         }
     
+        // Проверяем наличие ранее созданых рефлексий
         if (!isset($this->reflections[$class_name])) {
             $this->reflections[$class_name] = new \ReflectionClass($class_name);
         }
@@ -107,6 +117,7 @@ class Container implements ContainerInterface
         }
     }
     
+    // Проходит по дереву зависимостей
     private function iterateDependensies() : void
     {
         $deps = end($this->dependencies);
@@ -126,7 +137,7 @@ class Container implements ContainerInterface
         }
     }
     
-    // Рекурсивно проходит по зависимостям
+    // Рекурсивно инстанцирует зависимости
     private function instanceRecursive(string $class, array $deps) : void
     {
         $dependencies = [];
