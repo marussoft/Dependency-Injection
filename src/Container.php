@@ -107,7 +107,7 @@ class Container implements ContainerInterface
                 $dep_class_name = $class->getName();
                 
                 // Если класс зависит от запрошенного то это циклическая зависимость
-                if (isset($this->dependencies[$class_name][$dep_class_name])) {
+                if (isset($this->dependencies[$dep_class_name][$class_name])) {
                     throw new EndlessException($class_name, $dep_class_name);
                 }
                 
