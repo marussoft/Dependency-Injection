@@ -107,11 +107,11 @@ class Container implements ContainerInterface
                 $dep_class_name = $class->getName();
                 
                 // Если класс зависит от запрошенного то это циклическая зависимость
-                if (isset($this->dependencies[$dep_class_name])) {
+                if (isset($this->dependencies[$class_name][$dep_class_name])) {
                     throw new EndlessException($class_name, $dep_class_name);
                 }
                 
-                $this->dependencies[$class_name][] = $dep_class_name;
+                $this->dependencies[$class_name][$dep_class_name] = $dep_class_name;
                 $this->prepareDependencies($dep_class_name);
             }
         }
@@ -133,12 +133,17 @@ class Container implements ContainerInterface
                 break;
             }
 
+            if (empty($deps)) {
+                $this->instanceClass($class);
+                continue;
+            }
+            
             $this->instanceRecursive($class, $deps);
         }
     }
     
     // Рекурсивно инстанцирует зависимости
-    private function instanceRecursive(string $class, array $deps) : void
+    private function instanceRecursive(string $class, array $deps = []) : void
     {
         $dependencies = [];
     
@@ -148,8 +153,10 @@ class Container implements ContainerInterface
             
                 if ($this->hasDefination($dep)) {
                     $dependencies[] = $this->getDefination($dep);
-                } else {
+                } elseif ($this->getDefination($dep) !== null) {
                     $this->instanceRecursive($dep, $this->getDefination($dep));
+                } else {
+                    $this->instanceSingleClass($dep);
                 }
 
             } else {
