@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Marussia\DependencyInjection;
 
-use Marussia\DependencyInjection\Exception\EndlessException;
-use Marussia\DependencyInjection\Exception\NotFoundException;
+use Marussia\DependencyInjection\Exceptions\EndlessException;
+use Marussia\DependencyInjection\Exceptions\NotFoundException;
 
 class Container implements ContainerInterface
 {
@@ -27,21 +27,21 @@ class Container implements ContainerInterface
     // Флаг синглтона
     private $singleton;
 
-    public function get(string $class_name)
+    public function get(string $className)
     {
-        if (!isset($this->definations[$class_name])) {
-            throw new NotFoundException($class_name);
+        if (!isset($this->definations[$className])) {
+            throw new NotFoundException($className);
         }
-        return $this->definations[$class_name];
+        return $this->definations[$className];
     }
     
-    public function has(string $class_name) : bool
+    public function has(string $className) : bool
     {
-        return isset($this->definations[$class_name]);
+        return isset($this->definations[$className]);
     }
     
     // Создает инстанс переданного класса
-    public function instance(string $class_name, array $params = [], bool $singleton = true)
+    public function instance(string $className, array $params = [], bool $singleton = true)
     {
         $this->tmp = [];
         
@@ -51,49 +51,62 @@ class Container implements ContainerInterface
     
         $this->params = $params;
         
-        $this->prepareDependencies($class_name);
+        $this->prepareDependencies($className);
         
         if (count($this->dependencies) === 1) {
-            $this->instanceSingleClass($class_name);
-            return $this->getDefination($class_name);
+            $this->instanceSingleClass($className);
+            return $this->getDefination($className);
         }
         
         if (empty($this->dependencies)) {
-            $this->instanceClass($class_name);
-            return $this->getDefination($class_name);
+            $this->instanceClass($className);
+            return $this->getDefination($className);
         }
         
         $this->iterateDependensies();
         
         $this->trees = array_merge($this->trees, $this->dependencies);
 
-        return $this->getDefination($class_name);
+        return $this->getDefination($className);
+    }
+    
+    public function getClassMap(string $className) : array
+    {
+        if (!array_key_exists($className, $this->trees)) {
+            $this->instance($className);
+        }
+        return $this->trees[$className];
+    }
+    
+    public function setClassMap(array $classMap) : void
+    {
+        $this->trees = array_merge($this->trees, $classMap);
     }
     
     // Подготавливает зависимости к рекурсивному инстанцированию 
-    private function prepareDependencies(string $class_name) : void
+    private function prepareDependencies(string $className) : void
     {
         // Проверяем наличие ранее созданного дерева зависимостей для класса
-        if (isset($this->trees[$class_name])) {
-            $this->dependencies[$class_name] = $this->trees[$class_name];
+        if (isset($this->trees[$className])) {
+            $this->dependencies[$className] = $this->trees[$className];
             return;
         }
     
         // Проверяем наличие ранее созданых рефлексий
-        if (!isset($this->reflections[$class_name])) {
-            $this->reflections[$class_name] = new \ReflectionClass($class_name);
+        if (!isset($this->reflections[$className])) {
+            $this->reflections[$className] = new \ReflectionClass($className);
         }
 
         // Получаем конструктор
-        $constructor = $this->reflections[$class_name]->getConstructor();
+        $constructor = $this->reflections[$className]->getConstructor();
         
         if ($constructor !== null) {
-            $this->buildDependencies($constructor, $class_name);
+            $this->buildDependencies($constructor, $className);
         }
     }
     
     // Рекурсивно выстраивает зависимости
-    private function buildDependencies(\ReflectionMethod $constructor, string $class_name) : void
+    private function buildDependencies(\ReflectionMethod $constructor, string $className) : void
     {
         // Проходим по параметрам конструктора
         foreach ($constructor->getParameters() as $param) {
@@ -104,15 +117,15 @@ class Container implements ContainerInterface
             // Если в параметрах есть зависимость то получаем её
             if (null !== $class) {
             
-                $dep_class_name = $class->getName();
+                $depClassName = $class->getName();
                 
                 // Если класс зависит от запрошенного то это циклическая зависимость
-                if (isset($this->dependencies[$dep_class_name][$class_name])) {
-                    throw new EndlessException($class_name, $dep_class_name);
+                if (isset($this->dependencies[$depClassName][$className])) {
+                    throw new EndlessException($className, $depClassName);
                 }
                 
-                $this->dependencies[$class_name][$dep_class_name] = $dep_class_name;
-                $this->prepareDependencies($dep_class_name);
+                $this->dependencies[$className][$depClassName] = $depClassName;
+                $this->prepareDependencies($depClassName);
             }
         }
     }
@@ -194,28 +207,28 @@ class Container implements ContainerInterface
         $this->setDefination($class, $this->reflections[$class]->newInstanceArgs($dependencies));
     }
     
-    private function setDefination(string $class_name, $defination) : void
+    private function setDefination(string $className, $defination) : void
     {
         if ($this->singleton) {
-            $this->definations[$class_name] = $defination;
+            $this->definations[$className] = $defination;
         } else {
-            $this->tmp[$class_name] = $defination;
+            $this->tmp[$className] = $defination;
         }
     }
     
-    private function getDefination(string $class_name)
+    private function getDefination(string $className)
     {
         if ($this->singleton) {
-            return $this->definations[$class_name];
+            return $this->definations[$className];
         }
-        return $this->tmp[$class_name];
+        return $this->tmp[$className];
     }
     
-    private function hasDefination(string $class_name) : bool
+    private function hasDefination(string $className) : bool
     {
         if ($this->singleton) {
-            return isset($this->definations[$class_name]);
+            return isset($this->definations[$className]);
         }
-        return isset($this->tmp[$class_name]);
+        return isset($this->tmp[$className]);
     }
 }
