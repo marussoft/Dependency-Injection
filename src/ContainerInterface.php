@@ -2,17 +2,16 @@
 
 namespace Marussia\DependencyInjection;
 
-
 interface ContainerInterface
 {
 
-    // Возвращает объект из контейнера по $class_name
-    public function get(string $class_name);
+    // Возвращает объект из контейнера по $className
+    public function get(string $className);
 
-    // Проверяет есть ли в контейнере объект $class_name
-    public function has(string $class_name) : bool;
+    // Проверяет есть ли в контейнере объект $className
+    public function has(string $className) : bool;
     
     // Возвращает новый объекьт
-    public function instance(string $class_name, array $params, bool $singletone);
+    public function instance(string $className, array $params, bool $singletone);
 
 } 
