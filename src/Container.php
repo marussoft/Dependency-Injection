@@ -26,7 +26,7 @@ class Container implements ContainerInterface
     private $trees = [];
     
     // Массив сопоставлений Interface => Class
-    private $interfaceMap = [];
+    private $classMap = [];
     
     private $tmp;
     
@@ -76,7 +76,7 @@ class Container implements ContainerInterface
         
         $this->iterateDependensies();
         
-        $this->trees = array_merge($this->trees, $this->dependencies);
+        $this->trees[$className] = $this->dependencies;
 
         return $this->getDefination($className);
     }
@@ -91,13 +91,7 @@ class Container implements ContainerInterface
     
     public function setClassMap(array $classMap) : void
     {
-        if (array_key_exists('classMap', $classMap)) {
-            $this->trees = array_merge($this->trees, $classMap['classMap']);
-        }
-        
-        if (array_key_exists('interfaceMap', $classMap)) {
-            $this->interfaceMap = $classMap['interfaceMap'];
-        }
+        $this->classMap = $classMap;
     }
     
     // Подготавливает зависимости к рекурсивному инстанцированию 
@@ -105,7 +99,7 @@ class Container implements ContainerInterface
     {
         // Проверяем наличие ранее созданного дерева зависимостей для класса
         if (isset($this->trees[$className])) {
-            $this->dependencies[$className] = $this->trees[$className];
+            $this->dependencies = $this->trees[$className];
             return;
         }
     
@@ -150,11 +144,11 @@ class Container implements ContainerInterface
     {
         $depInterfaceName = $interface->getName();
     
-        if (!array_key_exists($depInterfaceName, $this->interfaceMap)) {
+        if (!array_key_exists($depInterfaceName, $this->classMap)) {
             throw new InterfaceMapNotFoundException($depInterfaceName);
         }
         
-        $depClassName = $this->interfaceMap[$depInterfaceName];
+        $depClassName = $this->classMap[$depInterfaceName];
         
         $this->resolveDependency($className, $depClassName);
     }
