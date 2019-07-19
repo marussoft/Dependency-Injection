@@ -6,6 +6,7 @@ namespace Marussia\DependencyInjection;
 
 use Marussia\DependencyInjection\Exceptions\EndlessException;
 use Marussia\DependencyInjection\Exceptions\NotFoundException;
+use Marussia\DependencyInjection\Exceptions\InterfaceMapNotFoundException;
 
 class Container implements ContainerInterface
 {
@@ -24,8 +25,18 @@ class Container implements ContainerInterface
     // Сохраненные деревья зависимостей
     private $trees = [];
     
+    // Массив сопоставлений Interface => Class
+    private $interfaceMap = [];
+    
+    private $tmp;
+    
     // Флаг синглтона
     private $singleton;
+    
+    public static function create() : self
+    {
+        return new static;
+    }
 
     public function get(string $className)
     {
@@ -80,7 +91,13 @@ class Container implements ContainerInterface
     
     public function setClassMap(array $classMap) : void
     {
-        $this->trees = array_merge($this->trees, $classMap);
+        if (array_key_exists('classMap', $classMap)) {
+            $this->trees = array_merge($this->trees, $classMap['classMap']);
+        }
+        
+        if (array_key_exists('interfaceMap', $classMap)) {
+            $this->interfaceMap = $classMap['interfaceMap'];
+        }
     }
     
     // Подготавливает зависимости к рекурсивному инстанцированию 
@@ -117,17 +134,40 @@ class Container implements ContainerInterface
             // Если в параметрах есть зависимость то получаем её
             if (null !== $class) {
             
+                if ($class->isInterface()) {
+                    $this->prepareInterface($class, $className);
+                    continue;
+                }
+            
                 $depClassName = $class->getName();
                 
-                // Если класс зависит от запрошенного то это циклическая зависимость
-                if (isset($this->dependencies[$depClassName][$className])) {
-                    throw new EndlessException($className, $depClassName);
-                }
-                
-                $this->dependencies[$className][$depClassName] = $depClassName;
-                $this->prepareDependencies($depClassName);
+                $this->resolveDependency($className, $depClassName);
             }
         }
+    }
+    
+    private function prepareInterface(\ReflectionClass $interface, string $className)
+    {
+        $depInterfaceName = $interface->getName();
+    
+        if (!array_key_exists($depInterfaceName, $this->interfaceMap)) {
+            throw new InterfaceMapNotFoundException($depInterfaceName);
+        }
+        
+        $depClassName = $this->interfaceMap[$depInterfaceName];
+        
+        $this->resolveDependency($className, $depClassName);
+    }
+    
+    private function resolveDependency(string $className, string $depClassName){
+    
+        // Если класс зависит от запрошенного то это циклическая зависимость
+        if (isset($this->dependencies[$depClassName][$className])) {
+            throw new EndlessException($className, $depClassName);
+        }
+        
+        $this->dependencies[$className][$depClassName] = $depClassName;
+        $this->prepareDependencies($depClassName);
     }
     
     // Проходит по дереву зависимостей
