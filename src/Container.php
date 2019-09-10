@@ -7,6 +7,7 @@ namespace Marussia\DependencyInjection;
 use Marussia\DependencyInjection\Exceptions\EndlessException;
 use Marussia\DependencyInjection\Exceptions\NotFoundException;
 use Marussia\DependencyInjection\Exceptions\InterfaceMapNotFoundException;
+use Marussia\DependencyInjection\Exceptions\DefinationIsNotObjectTypeException;
 
 class Container implements ContainerInterface
 {
@@ -49,6 +50,15 @@ class Container implements ContainerInterface
     public function has(string $className) : bool
     {
         return isset($this->definations[$className]);
+    }
+    
+    public function set($defination) : void
+    {
+        if (!is_object($defination)) {
+            throw new DefinationIsNotObjectTypeException(gettype($defination));
+        }
+        $className = get_class($defination);
+        $this->setDefination($className, $defination);
     }
     
     // Создает инстанс переданного класса
@@ -134,6 +144,10 @@ class Container implements ContainerInterface
                 }
             
                 $depClassName = $class->getName();
+                
+                if (isset($this->dependencies[$depClassName])) {
+                    throw new EndlessException($className, $depClassName);
+                }
                 
                 $this->resolveDependency($className, $depClassName);
             }
@@ -243,7 +257,7 @@ class Container implements ContainerInterface
     
     private function setDefination(string $className, $defination) : void
     {
-        if ($this->singleton) {
+        if ($this->singleton && !isset($this->definations[$className])) {
             $this->definations[$className] = $defination;
         } else {
             $this->tmp[$className] = $defination;
