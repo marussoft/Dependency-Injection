@@ -32,7 +32,7 @@ class Container implements ContainerInterface
     private $tmp;
     
     // Флаг синглтона
-    private $singleton;
+    private $singleton = true;
     
     public static function create() : self
     {
@@ -58,6 +58,7 @@ class Container implements ContainerInterface
             throw new DefinationIsNotObjectTypeException(gettype($defination));
         }
         $className = get_class($defination);
+
         $this->setDefination($className, $defination);
     }
     
@@ -145,7 +146,7 @@ class Container implements ContainerInterface
             
                 $depClassName = $class->getName();
                 
-                if (isset($this->dependencies[$depClassName])) {
+                if (isset($this->dependencies[$className][$depClassName])) {
                     throw new EndlessException($className, $depClassName);
                 }
                 
