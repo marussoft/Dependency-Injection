@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 declare(strict_types=1);
 
@@ -13,27 +13,30 @@ class Container implements ContainerInterface
 {
     // Массив рефлексий
     protected $reflections;
-    
+
     // Массив дерева зависимостей
     protected $dependencies = [];
-    
+
     // Массив объектов
     protected $definitions;
-    
+
     // Массив параметров
     protected $params;
-    
+
     // Сохраненные деревья зависимостей
     protected $trees = [];
-    
+
     // Массив сопоставлений Interface => Class
     protected $classMap = [];
-    
+
+    // Массив поставщиков параметров
+    protected $providers = [];
+
     protected $tmp;
-    
+
     // Флаг синглтона
     protected $singleton = true;
-    
+
     public static function create() : self
     {
         return new static;
@@ -46,12 +49,12 @@ class Container implements ContainerInterface
         }
         return $this->definitions[$className];
     }
-    
+
     public function has(string $className) : bool
     {
         return isset($this->definitions[$className]);
     }
-    
+
     public function set($definition) : void
     {
         if (!is_object($definition)) {
@@ -61,37 +64,37 @@ class Container implements ContainerInterface
 
         $this->setDefinition($className, $definition);
     }
-    
+
     // Создает инстанс переданного класса
     public function instance(string $className, array $params = [], bool $singleton = true)
     {
         $this->tmp = [];
-        
+
         $this->dependencies = [];
-    
+
         $this->singleton = $singleton;
-    
+
         $this->params = $params;
-        
+
         $this->prepareDependencies($className);
-        
+
         if (count($this->dependencies) === 1) {
             $this->instanceSingleClass($className);
             return $this->getDefinition($className);
         }
-        
+
         if (empty($this->dependencies)) {
             $this->instanceClass($className);
             return $this->getDefinition($className);
         }
-        
+
         $this->iterateDependensies();
-        
+
         $this->trees[$className] = $this->dependencies;
 
         return $this->getDefinition($className);
     }
-    
+
     public function getClassMap(string $className) : array
     {
         if (!array_key_exists($className, $this->trees)) {
@@ -99,13 +102,13 @@ class Container implements ContainerInterface
         }
         return $this->trees[$className];
     }
-    
+
     public function setClassMap(array $classMap) : void
     {
         $this->classMap = $classMap;
     }
-    
-    // Подготавливает зависимости к рекурсивному инстанцированию 
+
+    // Подготавливает зависимости к рекурсивному инстанцированию
     protected function prepareDependencies(string $className) : void
     {
         // Проверяем наличие ранее созданного дерева зависимостей для класса
@@ -113,7 +116,7 @@ class Container implements ContainerInterface
             $this->dependencies = $this->trees[$className];
             return;
         }
-    
+
         // Проверяем наличие ранее созданых рефлексий
         if (!isset($this->reflections[$className])) {
             $this->reflections[$className] = new \ReflectionClass($className);
@@ -121,73 +124,73 @@ class Container implements ContainerInterface
 
         // Получаем конструктор
         $constructor = $this->reflections[$className]->getConstructor();
-        
+
         if ($constructor !== null) {
             $this->buildDependencies($constructor, $className);
         }
     }
-    
+
     // Рекурсивно выстраивает зависимости
     protected function buildDependencies(\ReflectionMethod $constructor, string $className) : void
     {
         // Проходим по параметрам конструктора
         foreach ($constructor->getParameters() as $param) {
-        
+
             // Получаем класс из подсказки типа
             $class = $param->getClass();
-            
+
             // Если в параметрах есть зависимость то получаем её
             if (null !== $class) {
-            
+
                 if ($class->isInterface()) {
                     $this->prepareInterface($class, $className);
                     continue;
                 }
-            
+
                 $depClassName = $class->getName();
-                
+
                 if (isset($this->dependencies[$className][$depClassName])) {
                     throw new EndlessException($className, $depClassName);
                 }
-                
+
                 $this->resolveDependency($className, $depClassName);
             }
         }
     }
-    
+
     protected function prepareInterface(\ReflectionClass $interface, string $className)
     {
         $depInterfaceName = $interface->getName();
-    
+
         if (!array_key_exists($depInterfaceName, $this->classMap)) {
             throw new InterfaceMapNotFoundException($depInterfaceName);
         }
-        
+
         $depClassName = $this->classMap[$depInterfaceName];
-        
+
         $this->resolveDependency($className, $depClassName);
     }
-    
+
     protected function resolveDependency(string $className, string $depClassName){
-    
+
         // Если класс зависит от запрошенного то это циклическая зависимость
         if (isset($this->dependencies[$depClassName][$className])) {
             throw new EndlessException($className, $depClassName);
         }
-        
+
         $this->dependencies[$className][$depClassName] = $depClassName;
         $this->prepareDependencies($depClassName);
     }
-    
+
     // Проходит по дереву зависимостей
     protected function iterateDependensies() : void
     {
         $deps = end($this->dependencies);
-        
+
         while ($deps !== false) {
-        
+
             $class = key($this->dependencies);
-            
+
             $deps = current($this->dependencies);
 
             if (prev($this->dependencies) === false) {
@@ -199,20 +202,20 @@ class Container implements ContainerInterface
                 $this->instanceClass($class);
                 continue;
             }
-            
+
             $this->instanceRecursive($class, $deps);
         }
     }
-    
+
     // Рекурсивно инстанцирует зависимости
     protected function instanceRecursive(string $class, array $deps = []) : void
     {
         $dependencies = [];
-    
+
         foreach ($deps as $dep) {
-            
+
             if (isset($this->dependencies[$dep])) {
-            
+
                 if ($this->hasDefinition($dep)) {
                     $dependencies[] = $this->getDefinition($dep);
                 } elseif ($this->getDefinition($dep) !== null) {
@@ -224,38 +227,38 @@ class Container implements ContainerInterface
             } else {
                 $this->setDefinition($dep, $this->reflections[$dep]->newInstance());
             }
-            
+
             $dependencies[] = $this->getDefinition($dep);
         }
-        
+
         $this->setDefinition($class, $this->reflections[$class]->newInstanceArgs($dependencies));
     }
-    
+
     protected function instanceSingleClass(string $class) : void
     {
         foreach ($this->dependencies[$class] as $dep) {
-            
+
             if (!$this->hasDefinition($dep)) {
                 $this->setDefinition($dep, $this->reflections[$dep]->newInstance());
             }
         }
         $this->instanceClass($class, $this->dependencies[$class]);
     }
-    
+
     protected function instanceClass(string $class, array $deps = []) : void
     {
         $dependencies = [];
-        
+
         foreach ($deps as $dep) {
             $dependencies[] = $this->getDefinition($dep);
         }
-        
+
         if (!empty($this->params)) {
             $dependencies = array_merge($dependencies, $this->params);
         }
         $this->setDefinition($class, $this->reflections[$class]->newInstanceArgs($dependencies));
     }
-    
+
     protected function setDefinition(string $className, $definition) : void
     {
         if ($this->singleton && !isset($this->definitions[$className])) {
@@ -264,7 +267,7 @@ class Container implements ContainerInterface
             $this->tmp[$className] = $definition;
         }
     }
-    
+
     protected function getDefinition(string $className)
     {
         if ($this->singleton) {
@@ -272,7 +275,7 @@ class Container implements ContainerInterface
         }
         return $this->tmp[$className];
     }
-    
+
     protected function hasDefinition(string $className) : bool
     {
         if ($this->singleton) {
