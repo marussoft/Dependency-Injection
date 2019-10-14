@@ -62,7 +62,7 @@ class Container implements ContainerInterface
         }
         $className = get_class($definition);
 
-        $this->setDefinition($className, $definition);
+        $this->definitions[$className] = $definition;
     }
 
     // Создает инстанс переданного класса
@@ -150,7 +150,10 @@ class Container implements ContainerInterface
                 $depClassName = $class->getName();
 
                 if (isset($this->dependencies[$className][$depClassName])) {
-                    throw new EndlessException($className, $depClassName);
+//                     echo '<pre>';
+//                     var_dump($this->dependencies);
+//                     echo '</pre>';
+//                     throw new EndlessException($className, $depClassName);
                 }
 
                 $this->resolveDependency($className, $depClassName);
