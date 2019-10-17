@@ -62,7 +62,7 @@ class Container implements ContainerInterface
         }
         $className = get_class($definition);
 
-        $this->setDefinition($className, $definition);
+        $this->definitions[$className] = $definition;
     }
 
     // Создает инстанс переданного класса
@@ -149,10 +149,6 @@ class Container implements ContainerInterface
 
                 $depClassName = $class->getName();
 
-                if (isset($this->dependencies[$className][$depClassName])) {
-                    throw new EndlessException($className, $depClassName);
-                }
-
                 $this->resolveDependency($className, $depClassName);
             }
         }
@@ -171,8 +167,8 @@ class Container implements ContainerInterface
         $this->resolveDependency($className, $depClassName);
     }
 
-    protected function resolveDependency(string $className, string $depClassName){
-
+    protected function resolveDependency(string $className, string $depClassName)
+    {
         // Если класс зависит от запрошенного то это циклическая зависимость
         if (isset($this->dependencies[$depClassName][$className])) {
             throw new EndlessException($className, $depClassName);
