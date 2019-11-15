@@ -42,9 +42,9 @@ class Container implements ContainerInterface
         $this->providers = $providers;
     }
     
-    public static function create() : self
+    public static function create(array $providers = []) : self
     {
-        return new static;
+        return new static($providers);
     }
 
     public function get(string $className)
