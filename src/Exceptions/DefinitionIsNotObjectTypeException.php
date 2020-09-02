@@ -2,7 +2,7 @@
 
 namespace Marussia\DependencyInjection\Exceptions;
 
-class DefinitionIsNotObjectTypeException extends \Exception
+class DefinitionIsNotObjectTypeException extends \Exception implements \Psr\Container\ContainerExceptionInterface
 {
     public function __construct($type)
     {

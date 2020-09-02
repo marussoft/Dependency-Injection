@@ -16,7 +16,8 @@
         "docs": "https://docs.marussia.org/di/"
     },
     "require": {
-        "php": ">=7.0.0"
+        "php": ">=7.4.0",
+        "psr/container": "^1.0"
     },
     "minimum-stability": "dev",
     "autoload": {

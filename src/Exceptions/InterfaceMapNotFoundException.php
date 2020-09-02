@@ -2,7 +2,7 @@
 
 namespace Marussia\DependencyInjection\Exceptions;
 
-class InterfaceMapNotFoundException extends \Exception
+class InterfaceMapNotFoundException extends \Exception implements \Psr\Container\ContainerExceptionInterface
 {
     public function __construct(string $interfaceName)
     {
